@@ -1,0 +1,15 @@
+.header-container{
+
+}
+
+.nav-item a{
+    text-decoration: none;
+    color: black;
+    padding: 15px;
+}
+
+.nav-item a:hover{
+    border-radius: 10px;
+    color: blue;
+    background-color: aquamarine;
+}

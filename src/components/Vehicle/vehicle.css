@@ -1,0 +1,20 @@
+.row{
+    margin: 0;
+}
+
+.col-container{
+    margin-top: 100px;
+}
+
+.img-container{
+    cursor: pointer;
+    text-align: center;
+    background-color: #ffffff;
+    border-radius: 10px;
+}
+
+.img-container img{
+    padding: 20px;
+    width: 180px;
+    height: 200px;
+}

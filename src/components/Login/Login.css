@@ -1,0 +1,19 @@
+.form-container{
+    margin-top: 100px;
+    border: 1px solid black;
+    padding: 20px;
+    border-radius: 5px;
+}
+
+.sign-up{
+    background-color: #ffffff;
+    color: #000000;
+}
+
+.gf-btn-container{
+    text-align: center;
+}
+
+.gf-btn{
+    margin-top: 20px;
+}
