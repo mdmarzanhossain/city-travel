@@ -17,3 +17,26 @@
 .gf-btn{
     margin-top: 20px;
 }
+
+.btn-sign-log{
+    background: #2135c4;
+    color: white;
+    border-radius: 5px;
+    border: 1px solid #2135c4;
+}
+
+.user-form input{
+    margin: 10px 0;
+}
+
+.user-create-text{
+    color: green;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.password-match-text{
+    color: red;
+    font-size: 20px;
+    font-weight: bold;
+}

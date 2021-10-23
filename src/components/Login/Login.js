@@ -4,7 +4,7 @@ import './Login.css';
 import {Link, useHistory, useLocation} from "react-router-dom";
 import { initializeApp } from 'firebase/app';
 import {firebaseConfig} from "./firebase.config";
-import { getAuth, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
+import { getAuth, signInWithPopup, GoogleAuthProvider, GithubAuthProvider, updateProfile, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
 import {UserContext} from "../../App";
 
 const Login = () => {
@@ -15,62 +15,164 @@ const Login = () => {
 
     const [loggedInUser, setLoggedInUser] = useContext(UserContext);
     let [signInUser, setSignInUser] = useState();
+    const [newUser, setNewUser] = useState(false);
+    const [matchPassword, setMatchPassword] = useState(true);
+
+    const [user, setUser] = useState({
+        isSignedIn: false,
+        name: '',
+        email: '',
+        password: '',
+        photo: '',
+        error: '',
+        success: false
+    });
 
     const app = initializeApp(firebaseConfig);
     const googleProvider = new GoogleAuthProvider();
+    const gitHubProvider = new GithubAuthProvider();
+    const auth = getAuth();
 
     const handleGoogleSignIn = () => {
-        const auth = getAuth();
         signInWithPopup(auth, googleProvider)
             .then((result) => {
-                // This gives you a Google Access Token. You can use it to access the Google API.
                 const credential = GoogleAuthProvider.credentialFromResult(result);
                 const token = credential.accessToken;
-                // The signed-in user info.
                 const {displayName, email} = result.user;
                 signInUser = {name: displayName, email};
                 setLoggedInUser(signInUser);
                 history.replace(from);
-                // ...
             }).catch((error) => {
-            // Handle Errors here.
-            const errorCode = error.code;
-            const errorMessage = error.message;
-            // The email of the user's account used.
-            const email = error.email;
-            // The AuthCredential type that was used.
-            const credential = GoogleAuthProvider.credentialFromError(error);
-            // ...
+                console.log(error.code, error.message);
         });
     }
+
+    const handleGitHubSignIn = () => {
+        signInWithPopup(auth, gitHubProvider)
+            .then((result) => {
+                const credential = GithubAuthProvider.credentialFromResult(result);
+                const token = credential.accessToken;
+                const {displayName, email} = result.user;
+                signInUser = {name: displayName, email};
+                setLoggedInUser(signInUser);
+                history.replace(from);
+            }).catch((error) => {
+            console.log(error.code, error.message);
+        });
+    }
+
+    const handleSubmit = (e) => {
+        console.log("handle submit",user.email, user.password);
+        if (newUser && user.email && (user.password === user.confirmPassword)){
+            const matchPass=true;
+            setMatchPassword(matchPass);
+            console.log("submit");
+            createUserWithEmailAndPassword(auth, user.email, user.password)
+                .then((userCredential) => {
+                    // Signed in
+                    const user = userCredential.user;
+                    // ...
+                })
+                .then(res=>{
+                    const newUserInfo = {...user};
+                    newUserInfo.error = '';
+                    newUserInfo.success = true;
+                    setUser(newUserInfo);
+                    updateUserName(user.name);
+                })
+                .catch((error) => {
+                    const newUserInfo = {...user};
+                    newUserInfo.error = error.message;
+                    newUserInfo.success = false;
+                    setUser(newUserInfo);
+                });
+        }else {
+            const matchPass=false;
+            setMatchPassword(matchPass);
+            console.log("password incorrect");
+        }
+
+        if(!newUser && user.email && user.password){
+            console.log("not submit");
+            signInWithEmailAndPassword(auth, user.email, user.password)
+                .then((userCredential) => {
+                    // Signed in
+                    const user = userCredential.user;
+                    const {displayName, email} = user;
+                    signInUser = {name: displayName, email};
+                    setLoggedInUser(signInUser);
+                    history.replace(from);
+                })
+                .then(res => {
+                    const newUserInfo = {...user};
+                    newUserInfo.error = '';
+                    newUserInfo.success = true;
+                    setUser(newUserInfo);
+
+                })
+                .catch((error) => {
+                    const newUserInfo = {...user};
+                    newUserInfo.error = error.message;
+                    newUserInfo.success = false;
+                    setUser(newUserInfo);
+                });
+        }
+        e.preventDefault(); // puro page load howa bondho korbe
+    }
+
+    const updateUserName = (name) => {
+        updateProfile(auth.currentUser, {
+            displayName: name
+        }).then(() => {
+            console.log("username updated successfully");
+            // ...
+        }).catch((error) => {
+            console.log(error);
+        });
+    }
+
+    const handleBlur = (e) => {
+        let isFieldValid = 'true';
+        if (e.target.name === 'email'){
+            isFieldValid = /\S+@\S+\.\S+/.test(e.target.value);
+        }
+        if (e.target.name === 'password'){
+            const isPasswordValid = e.target.value.length > 6;
+            const isPasswordHasNumber = /\d{1}/.test(e.target.value);
+            isFieldValid = isPasswordHasNumber && isPasswordValid;
+        }
+
+        if (isFieldValid){
+            const newUserInfo = {...user};
+            newUserInfo[e.target.name] = e.target.value;
+            setUser(newUserInfo);
+        }
+    }
+
     return (
         <div className="row">
-            <div className="offset-md-4 col-md-4 form-container">
-                <Form>
-                    <Form.Group className="mb-3" controlId="formBasicEmail">
-                        <Form.Label>Email address</Form.Label>
-                        <Form.Control type="email" placeholder="Enter email" />
-                        <Form.Text className="text-muted">
-                            We'll never share your email with anyone else.
-                        </Form.Text>
-                    </Form.Group>
+            <div style={{textAlign:"center"}} className="offset-md-4 col-md-4 form-container">
+                <input type="checkbox" onChange={() => {setNewUser(!newUser); user.success = false}} name="newUser" id=""/>
+                <label htmlFor="newUser">New User Sign up</label>
 
-                    <Form.Group className="mb-3" controlId="formBasicPassword">
-                        <Form.Label>Password</Form.Label>
-                        <Form.Control type="password" placeholder="Password" />
-                    </Form.Group>
-                    <Form.Group className="mb-3" controlId="formBasicCheckbox">
-                        <Form.Check type="checkbox" label="Remember Me" />
-                    </Form.Group>
-                    <Button variant="primary" type="submit">
-                        Login
-                    </Button>
-                </Form>
-                <Form.Label>Don't have an account? <Link className="sign-up" to="/signUp">Create account</Link></Form.Label>
+                <form className="user-form" onSubmit={handleSubmit} action="">
+                    {newUser && <input placeholder="Name" name="name" onBlur={handleBlur} type="text" required/>}
+                    <br/>
+                    <input placeholder="Email" name="email" onBlur={handleBlur} type="text" required/>
+                    <br/>
+                    <input placeholder="Password" name="password" onBlur={handleBlur} type="password" required/>
+                    <br/>
+                    {newUser && <input placeholder="Confirm Password" name="confirmPassword" onBlur={handleBlur} type="password" required/>}
+                    {newUser && <br/>}
+                    <input className="btn-sign-log" type="submit" value={newUser ? 'Sign Up' : 'Log In'}/>
+                </form>
+                <p style={{color:"red"}}>{user.error}</p>
+                {!matchPassword && <p className="password-match-text">Password do not match.</p>}
+                { user.success && <p className="user-create-text" style={{color: "green"}}>User {newUser ? 'created' : 'logged in'} successfully</p>}
             </div>
             <div className="offset-md-4 col-md-4 gf-btn-container">
-                <Button className="gf-btn" variant="primary" type="submit">
-                    Continue With Facebook
+                <Button onClick={handleGitHubSignIn} className="gf-btn" variant="primary" type="submit">
+                    Continue With GitHub
                 </Button>
                 <br/>
                 <Button onClick={handleGoogleSignIn} className="gf-btn" variant="primary" type="submit">
